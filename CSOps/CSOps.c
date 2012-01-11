@@ -49,7 +49,7 @@ static struct csops_struct{
 }CSOPS[] = {
 	/* status of current code. */
 	{
-		.description  = "Return the status of the given PID.",
+		.description  = "Return the code signature status of the given PID.",
 		.command_line = "-status",
 		.ops		  = CS_OPS_STATUS,
 		.useraddr	  = (void*)&int_buffer,
@@ -89,7 +89,7 @@ static struct csops_struct{
 	},
 	/* mark the process as hard. Not sure what it means! */
 	{
-		.description  = "Someone at apple had a hardon about codesigning... :-)",
+		.description  = "Doesn't seem to do anything useful... :-)",
 		.command_line = "-mark_hard",
 		.ops		  = CS_OPS_MARKHARD,
 		.useraddr	  = (void*)&int_buffer,	// Unused by kernel
@@ -102,9 +102,9 @@ static struct csops_struct{
 	/* the path name for executable. */
 	{
 		.description  = "Return the executable path name for PID. Used by taskgated.",
-		.command_line = "-executable_path_for_pid",
+		.command_line = "-executable_path",
 		.ops		  = CS_OPS_PIDPATH,
-		.useraddr	  = (void*)&BUFFER,		// Path for PID returned
+		.useraddr	  = (void*)BUFFER,		// Path for PID returned
 		.usersize	  = (PATH_MAX-1),
 		.describe	  = ^{
 			fprintf(stdout, "PID: %d -> Executable path: '%s'\n", process_id,
@@ -116,7 +116,7 @@ static struct csops_struct{
 		.description  = "Return the Hash of the code directory.",
 		.command_line = "-code_directory_hash",
 		.ops		  = CS_OPS_CDHASH,
-		.useraddr	  = (void*)&BUFFER,		// SHA1 (20 bytes) of SHA1 Hash
+		.useraddr	  = (void*)BUFFER,		// SHA1 (20 bytes) of SHA1 Hash
 		.usersize	  = CC_SHA1_DIGEST_LENGTH,
 		.describe	  = ^{
 			int i;
