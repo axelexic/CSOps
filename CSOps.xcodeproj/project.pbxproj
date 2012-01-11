@@ -23,7 +23,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		569BF4A414BD0E1B0010F5C2 /* README.rtf */ = {isa = PBXFileReference; fileEncoding = 4; name = README.rtf; path = CSOps/README.rtf; sourceTree = "<group>"; };
+		569BF4A414BD0E1B0010F5C2 /* README */ = {isa = PBXFileReference; fileEncoding = 4; name = README; path = README; sourceTree = "<group>"; };
 		56FFCCB414BCE9C8002C49DB /* CSOps */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CSOps; sourceTree = BUILT_PRODUCTS_DIR; };
 		56FFCCB814BCE9C8002C49DB /* CSOps.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = CSOps.c; sourceTree = "<group>"; };
 		56FFCCC214BCEA98002C49DB /* codesign.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codesign.h; sourceTree = "<group>"; };
@@ -43,7 +43,7 @@
 		56FFCCA914BCE9C8002C49DB = {
 			isa = PBXGroup;
 			children = (
-				569BF4A414BD0E1B0010F5C2 /* README.rtf */,
+				569BF4A414BD0E1B0010F5C2 /* README */,
 				56FFCCB714BCE9C8002C49DB /* CSOps */,
 				56FFCCB514BCE9C8002C49DB /* Products */,
 			);
