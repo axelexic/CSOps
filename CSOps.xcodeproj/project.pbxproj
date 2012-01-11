@@ -7,8 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		56FFCCB914BCE9C8002C49DB /* main.c in Sources */ = {isa = PBXBuildFile; fileRef = 56FFCCB814BCE9C8002C49DB /* main.c */; };
-		56FFCCBB14BCE9C8002C49DB /* CSOps.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 56FFCCBA14BCE9C8002C49DB /* CSOps.1 */; };
+		56FFCCB914BCE9C8002C49DB /* CSOps.c in Sources */ = {isa = PBXBuildFile; fileRef = 56FFCCB814BCE9C8002C49DB /* CSOps.c */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -18,16 +17,16 @@
 			dstPath = /usr/share/man/man1/;
 			dstSubfolderSpec = 0;
 			files = (
-				56FFCCBB14BCE9C8002C49DB /* CSOps.1 in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 1;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		569BF4A414BD0E1B0010F5C2 /* README.rtf */ = {isa = PBXFileReference; fileEncoding = 4; name = README.rtf; path = CSOps/README.rtf; sourceTree = "<group>"; };
 		56FFCCB414BCE9C8002C49DB /* CSOps */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = CSOps; sourceTree = BUILT_PRODUCTS_DIR; };
-		56FFCCB814BCE9C8002C49DB /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
-		56FFCCBA14BCE9C8002C49DB /* CSOps.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; path = CSOps.1; sourceTree = "<group>"; };
+		56FFCCB814BCE9C8002C49DB /* CSOps.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = CSOps.c; sourceTree = "<group>"; };
+		56FFCCC214BCEA98002C49DB /* codesign.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = codesign.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -44,6 +43,7 @@
 		56FFCCA914BCE9C8002C49DB = {
 			isa = PBXGroup;
 			children = (
+				569BF4A414BD0E1B0010F5C2 /* README.rtf */,
 				56FFCCB714BCE9C8002C49DB /* CSOps */,
 				56FFCCB514BCE9C8002C49DB /* Products */,
 			);
@@ -60,8 +60,8 @@
 		56FFCCB714BCE9C8002C49DB /* CSOps */ = {
 			isa = PBXGroup;
 			children = (
-				56FFCCB814BCE9C8002C49DB /* main.c */,
-				56FFCCBA14BCE9C8002C49DB /* CSOps.1 */,
+				56FFCCC214BCEA98002C49DB /* codesign.h */,
+				56FFCCB814BCE9C8002C49DB /* CSOps.c */,
 			);
 			path = CSOps;
 			sourceTree = "<group>";
@@ -117,7 +117,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				56FFCCB914BCE9C8002C49DB /* main.c in Sources */,
+				56FFCCB914BCE9C8002C49DB /* CSOps.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -172,14 +172,20 @@
 		56FFCCBF14BCE9C8002C49DB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer: Yogesh Swami (6R586W8423)";
+				OTHER_CODE_SIGN_FLAGS = "-o hard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "ADAABA98-FDD0-4E87-A9CB-CF895627B98D";
 			};
 			name = Debug;
 		};
 		56FFCCC014BCE9C8002C49DB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "iPhone Developer: Yogesh Swami (6R586W8423)";
+				OTHER_CODE_SIGN_FLAGS = "-o hard";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "ADAABA98-FDD0-4E87-A9CB-CF895627B98D";
 			};
 			name = Release;
 		};
@@ -202,6 +208,7 @@
 				56FFCCC014BCE9C8002C49DB /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
