@@ -25,6 +25,7 @@
 #include <stdlib.h>		// atoi()
 #include <string.h>		// strlen()
 #include <errno.h>		// strerror()
+#include <ctype.h>
 #include "codesign.h"		// csops() and additional flags
 #include <sys/syslimits.h>	// PATH_MAX
 #include <CommonCrypto/CommonDigest.h>	// SHA_HASH_LENGTH. Gratutous? Yes!
@@ -182,7 +183,34 @@ static struct csops_struct{
 			fprintf(stdout, "PID: %d -> Marked as restricted "
 					"(sandboxed).\n", process_id);
 		}
-	}
+	},
+    {
+        .description  = "Return the code signature identity of "
+        "the given PID.",
+            .command_line = "-signingid",
+            .ops          = CS_OPS_IDENTITY,
+            .useraddr      = (void*)BUFFER,
+            .usersize      = (sizeof(BUFFER)-1),
+
+        /*
+         * In theory one can put csops system call in the
+         * block itself, but that would create a lot of
+         * duplicate code. So it's better to handle
+         * it separately.
+         */
+
+            .describe      = ^{
+                int i;
+                fprintf(stdout, "PID: %d -> Code Singing ID: ",
+                        process_id);
+                for(i=0;i<sizeof(BUFFER)-1; i++) {
+                    if (isprint(BUFFER[i])) {
+                        fprintf(stdout, "%c", (unsigned char)BUFFER[i]);
+                    }
+                }
+                fprintf(stdout, "\n");
+            }
+    }
 };
 
 
