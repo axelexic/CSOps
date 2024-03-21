@@ -72,8 +72,37 @@ CSOPS[] = {
 		 */
 
 		.describe	  = ^{
-			fprintf(stdout, "PID: %d -> Code Signing Status: %x\n",
+			fprintf(stdout, "PID: %d -> Code Signing Status: 0x%x FLAGS: ",
 					process_id, int_buffer);
+            if (int_buffer & CS_VALID) fprintf(stdout, "; CS_VALID ");
+               if (int_buffer & CS_ADHOC) fprintf(stdout, "; CS_ADHOC ");
+               if (int_buffer & CS_GET_TASK_ALLOW) fprintf(stdout, "; CS_GET_TASK_ALLOW ");
+               if (int_buffer & CS_INSTALLER) fprintf(stdout, "; CS_INSTALLER ");
+               if (int_buffer & CS_FORCED_LV) fprintf(stdout, "; CS_FORCED_LV ");
+               if (int_buffer & CS_INVALID_ALLOWED) fprintf(stdout, "; CS_INVALID_ALLOWED ");
+               if (int_buffer & CS_HARD) fprintf(stdout, "; CS_HARD ");
+               if (int_buffer & CS_KILL) fprintf(stdout, "; CS_KILL ");
+               if (int_buffer & CS_CHECK_EXPIRATION) fprintf(stdout, "; CS_CHECK_EXPIRATION ");
+               if (int_buffer & CS_RESTRICT) fprintf(stdout, "; CS_RESTRICT ");
+               if (int_buffer & CS_ENFORCEMENT) fprintf(stdout, "; CS_ENFORCEMENT ");
+               if (int_buffer & CS_REQUIRE_LV) fprintf(stdout, "; CS_REQUIRE_LV ");
+               if (int_buffer & CS_ENTITLEMENTS_VALIDATED) fprintf(stdout, "; CS_ENTITLEMENTS_VALIDATED ");
+               if (int_buffer & CS_NVRAM_UNRESTRICTED) fprintf(stdout, "; CS_NVRAM_UNRESTRICTED ");
+               if (int_buffer & CS_RUNTIME) fprintf(stdout, "; CS_RUNTIME ");
+               if (int_buffer & CS_LINKER_SIGNED) fprintf(stdout, "; CS_LINKER_SIGNED ");
+               if (int_buffer & CS_EXEC_SET_HARD) fprintf(stdout, "; CS_EXEC_SET_HARD ");
+               if (int_buffer & CS_EXEC_SET_KILL) fprintf(stdout, "; CS_EXEC_SET_KILL ");
+               if (int_buffer & CS_EXEC_SET_ENFORCEMENT) fprintf(stdout, "; CS_EXEC_SET_ENFORCEMENT ");
+               if (int_buffer & CS_EXEC_INHERIT_SIP) fprintf(stdout, "; CS_EXEC_INHERIT_SIP ");
+               if (int_buffer & CS_KILLED) fprintf(stdout, "; CS_KILLED ");
+               if (int_buffer & CS_NO_UNTRUSTED_HELPERS) fprintf(stdout, "; CS_NO_UNTRUSTED_HELPERS ");
+               if (int_buffer & CS_PLATFORM_BINARY) fprintf(stdout, "; CS_PLATFORM_BINARY ");
+               if (int_buffer & CS_PLATFORM_PATH) fprintf(stdout, "; CS_PLATFORM_PATH ");
+               if (int_buffer & CS_DEBUGGED) fprintf(stdout, "; CS_DEBUGGED ");
+               if (int_buffer & CS_SIGNED) fprintf(stdout, "; CS_SIGNED ");
+               if (int_buffer & CS_DEV_CODE) fprintf(stdout, "; CS_DEV_CODE ");
+               if (int_buffer & CS_DATAVAULT_CONTROLLER) fprintf(stdout, "; CS_DATAVAULT_CONTROLLER ");
+            fprintf(stdout, "\n");
 		}
 	},
 	/* Mark the process as a invalid. */
