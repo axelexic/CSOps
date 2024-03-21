@@ -30,15 +30,21 @@
 #include <sys/syslimits.h>	// PATH_MAX
 #include <CommonCrypto/CommonDigest.h>	// SHA_HASH_LENGTH. Gratutous? Yes!
 
-#define MAX_CSOPS_BUFFER_LEN 3*PATH_MAX	 // 3K < 1 page
+#define MAX_CSOPS_BUFFER_LEN 1024 * 1024 //based on Apple's code signing tests
 
 static char BUFFER[MAX_CSOPS_BUFFER_LEN];
 static uint32_t int_buffer;
-static off_t		  off_buffer;
+static off_t off_buffer;
 static pid_t process_id;
 
 typedef void (^describe_t)(void);
 
+static uint32_t bigEndianToLittleEndian(uint32_t value) {
+    return ((value >> 24) & 0xff) |
+           ((value << 8) & 0xff0000) |
+           ((value >> 8) & 0xff00) |
+           ((value << 24) & 0xff000000);
+}
 
 static struct csops_struct{
 	const char* description;
@@ -47,11 +53,12 @@ static struct csops_struct{
 	unsigned int ops;
 	void*	 useraddr;
 	size_t	 usersize;
-}CSOPS[] = {
+}
+
+CSOPS[] = {
 	/* status of current code. */
 	{
-		.description  = "Return the code signature status of "
-			         "the given PID.",
+		.description  = "Get the code signature status of the given PID.",
 		.command_line = "-status",
 		.ops		  = CS_OPS_STATUS,
 		.useraddr	  = (void*)&int_buffer,
@@ -71,7 +78,7 @@ static struct csops_struct{
 	},
 	/* Mark the process as a invalid. */
 	{
-		.description  = "Mark a given PID as having invalid Code Signature.",
+		.description  = "Invalidate the given PID's Code Signature.",
 		.command_line = "-mark_invalid",
 		.ops		  = CS_OPS_MARKINVALID,
 		.useraddr	  = (void*)&int_buffer,	// Unused by kernel
@@ -82,23 +89,9 @@ static struct csops_struct{
 				process_id);
 		}
 	},
-	/* kill the process if it's invalid. */
+	/* set the HARD flag */
 	{
-		.description  = "Kill the given PID if it has invalid "
-				"code signature.",
-		.command_line = "-kill_if_invalid",
-		.ops		  = CS_OPS_MARKKILL,
-		.useraddr	  = (void*)&int_buffer,	// Unused by kernel
-		.usersize	  = sizeof(int_buffer),	// Unused by kernel
-		.describe	  = ^{
-			fprintf(stdout, "PID: %d -> Marked to be killed if "
-					"code signature invalid.\n",
-					process_id);
-		}
-	},
-	/* mark the process as hard. Not sure what it means! */
-	{
-		.description  = "Doesn't seem to do anything useful... :-)",
+		.description  = "Sets the CS_HARD (0x00000100) code signing flag on the given PID.",
 		.command_line = "-mark_hard",
 		.ops		  = CS_OPS_MARKHARD,
 		.useraddr	  = (void*)&int_buffer,	// Unused by kernel
@@ -110,9 +103,23 @@ static struct csops_struct{
 		}
 
 	},
+    /* Kill the given PID if it has invalid code signature */
+    {
+        .description  = "Sets the CS_KILL (0x00000200) code signing flag on the given PID.",
+        .command_line = "-mark_kill",
+        .ops          = CS_OPS_MARKKILL,
+        .useraddr      = (void*)&int_buffer,    // Unused by kernel
+        .usersize      = sizeof(int_buffer),    // Unused by kernel
+        .describe      = ^{
+            fprintf(stdout, "PID: %d -> Marked to be killed if "
+                    "code signature invalid.\n",
+                    process_id);
+        }
+    },
 	/* the path name for executable. */
+    /* This function is not supported anymore, but leaving it here */
 	{
-		.description  = "Return the executable path name for PID. "
+		.description  = "Get the executable path name of the PID. "
 				"Used by taskgated.",
 		.command_line = "-executable_path",
 		.ops		  = CS_OPS_PIDPATH,
@@ -126,26 +133,25 @@ static struct csops_struct{
 	},
 	/* Get the hash of code directory. */
 	{
-		.description  = "Return the Hash of the code directory.",
-		.command_line = "-code_directory_hash",
+		.description  = "Get the code directory hash (CDHASH) of the given PID.",
+		.command_line = "-cdhash",
 		.ops		  = CS_OPS_CDHASH,
 		.useraddr	  = (void*)BUFFER, // SHA1 of code directory
 		.usersize	  = CC_SHA1_DIGEST_LENGTH,
 		.describe	  = ^{
 			int i;
-			fprintf(stdout, "PID: %d -> Code Directory hash: ",
+			fprintf(stdout, "PID: %d -> Code Directory Hash: ",
 					process_id);
-			for(i=0;i<CC_SHA1_DIGEST_LENGTH-1; i++){
-				fprintf(stdout, "%02x:",
+			for(i=0;i<CC_SHA1_DIGEST_LENGTH; i++){
+				fprintf(stdout, "%02x",
 						(unsigned char)BUFFER[i]);
 			}
-			fprintf(stdout, "%02x\n",
-			     (unsigned char)BUFFER[CC_SHA1_DIGEST_LENGTH-1]);
+			fprintf(stdout, "\n");
 		}
 	},
 	/* Get the entitlement blob. */
 	{
-		.description  = "Return the entitlements blob.",
+		.description  = "Get the entitlements blob of the given PID in XML format.",
 		.command_line = "-entitlement",
 		.ops		  = CS_OPS_ENTITLEMENTS_BLOB,
 		.useraddr	  = (void*)BUFFER,
@@ -153,64 +159,159 @@ static struct csops_struct{
 		.describe	  = ^{
 		   fprintf(stdout,"PID: %d -> Embedded Entitlements: '%s'\n",
 				process_id,
-				BUFFER);
+				((struct cs_blob*)BUFFER)->data);
 		}
 
 	},
 	/* Get the offset of active mach-o section. */
 	{
-		.description  = "Return file offset of active mach-o section.",
+		.description  = "Get file offset of active mach-o section of the given PID.",
 		.command_line = "-macho_offset",
 		.ops		  = CS_OPS_PIDOFFSET,
 		.useraddr	  = (void*)&off_buffer,
 		.usersize	  = sizeof(off_buffer),
 		.describe	  = ^{
 		   fprintf(stdout, "PID: %d -> Offset of Active "
-				   "Mach-O section: '%llu'\n",
+				   "Mach-O section: '0x%llx'\n",
 				   process_id,
 				   off_buffer);
 		}
 	},
-	/* Mark the process as restricted. */
-	{
-		.description  = "Mark the process as sandboxed. "
-				"Enforced on all future child processes.",
-		.command_line = "-restrict",
-		.ops		  = CS_OPS_STATUS,
-		.useraddr	  = (void*)&int_buffer,	// Unused by kernel
-		.usersize	  = sizeof(int_buffer),	// Unused by kernel
-		.describe	  = ^{
-			fprintf(stdout, "PID: %d -> Marked as restricted "
-					"(sandboxed).\n", process_id);
-		}
-	},
+    /* Get the entire CS blob. */
     {
-        .description  = "Return the code signature identity of "
+        .description  = "Get the entire code signing blob of the given PID.",
+        .command_line = "-blob",
+        .ops          = CS_OPS_BLOB,
+        .useraddr      = (void*)BUFFER,
+        .usersize      = MAX_CSOPS_BUFFER_LEN,
+        .describe      = ^{
+            int i;
+            uint32_t len = ((struct cs_blob*)BUFFER)->len;
+            uint32_t real_length = bigEndianToLittleEndian(len);
+            fprintf(stdout, "PID: %d -> Code Signing Blob: ",
+                    process_id);
+            for(i=0;i<real_length-8; i++){
+                fprintf(stdout, "%c",
+                        (unsigned char)((struct cs_blob*)BUFFER)->data[i]);
+            }
+            fprintf(stdout, "\n");
+        }
+
+    },
+    {
+        .description  = "Get the code signature identity (bundle ID) of "
         "the given PID.",
             .command_line = "-signingid",
             .ops          = CS_OPS_IDENTITY,
             .useraddr      = (void*)BUFFER,
-            .usersize      = (sizeof(BUFFER)-1),
-
-        /*
-         * In theory one can put csops system call in the
-         * block itself, but that would create a lot of
-         * duplicate code. So it's better to handle
-         * it separately.
-         */
-
+            .usersize      = (MAX_CSOPS_BUFFER_LEN-1),
             .describe      = ^{
-                int i;
-                fprintf(stdout, "PID: %d -> Code Singing ID: ",
-                        process_id);
-                for(i=0;i<sizeof(BUFFER)-1; i++) {
-                    if (isprint(BUFFER[i])) {
-                        fprintf(stdout, "%c", (unsigned char)BUFFER[i]);
-                    }
-                }
-                fprintf(stdout, "\n");
+                fprintf(stdout,"PID: %d -> Code Signing ID: '%s'\n",
+                     process_id,
+                     ((struct cs_blob*)BUFFER)->data);
             }
-    }
+    },
+    /* mark the process as restricted. */
+    {
+        .description  = "Sets the CS_RESTRICT (0x00000800) code signing flag"
+        "on the given PID.",
+        .command_line = "-mark-restrict",
+        .ops          = CS_OPS_MARKRESTRICT,
+        .useraddr      = (void*)&int_buffer,    // Unused by kernel
+        .usersize      = sizeof(int_buffer),    // Unused by kernel
+        .describe      = ^{
+            fprintf(stdout, "PID: %d -> Marked as restricted for "
+                    "code signature.\n",
+                    process_id);
+        }
+
+    },
+    /* Clear the installer flag */
+    {
+        .description  = "Clear the CS_INSTALLER (0x00000008) code signing flag "
+        "on the given PID.",
+        .command_line = "-clear_installer",
+        .ops          = CS_OPS_CLEARINSTALLER,
+        .useraddr      = (void*)&int_buffer,    // Unused by kernel
+        .usersize      = sizeof(int_buffer),    // Unused by kernel
+        .describe      = ^{
+            fprintf(stdout, "PID: %d -> Cleared the CS_INSTALLER flag for "
+                    "code signature.\n",
+                    process_id);
+        }
+
+    },
+    /* Clear the platform binary flag */
+    {
+        .description  = "Clear the CS_PLATFORM_BINARY (0x04000000) code signing flag "
+        "on the given PID.",
+        .command_line = "-clear_platform",
+        .ops          = CS_OPS_CLEARPLATFORM,
+        .useraddr      = (void*)&int_buffer,    // Unused by kernel
+        .usersize      = sizeof(int_buffer),    // Unused by kernel
+        .describe      = ^{
+            fprintf(stdout, "PID: %d -> Cleared the CS_PLATFORM_BINARY flag for "
+                    "code signature.\n",
+                    process_id);
+        }
+
+    },
+    {
+        .description  = "Get the Team ID of the given PID.",
+        .command_line = "-teamid",
+        .ops          = CS_OPS_TEAMID,
+        .useraddr      = (void*)BUFFER,
+        .usersize      = (CS_MAX_TEAMID_LEN-1),
+        .describe      = ^{
+            fprintf(stdout, "PID: %d -> Team ID: '%s'\n",
+                    process_id,
+                    ((struct cs_blob*)BUFFER)->data);
+            }
+    },
+    /* Clear the library validation flag */
+    {
+        .description  = "Clear the CS_REQUIRE_LV (0x00002000) code signing flag "
+        "on the given PID.",
+        .command_line = "-clear_lv",
+        .ops          = CS_OPS_CLEAR_LV,
+        .useraddr      = (void*)&int_buffer,    // Unused by kernel
+        .usersize      = sizeof(int_buffer),    // Unused by kernel
+        .describe      = ^{
+            fprintf(stdout, "PID: %d -> Cleared the CS_REQUIRE_LV flag for "
+                    "code signature.\n",
+                    process_id);
+        }
+
+    },
+    /* Get the DER entitlement blob. */
+    {
+        .description  = "Get the entitlements blob in DER format "
+        "of the given PID.",
+        .command_line = "-der_entitlement",
+        .ops          = CS_OPS_DER_ENTITLEMENTS_BLOB,
+        .useraddr      = (void*)BUFFER,
+        .usersize      = (MAX_CSOPS_BUFFER_LEN-1),
+        .describe      = ^{
+           fprintf(stdout,"PID: %d -> Embedded Entitlements (DER): '%s'\n",
+                process_id,
+                ((struct cs_blob*)BUFFER)->data);
+        }
+
+    },
+    /* Get the validation category. */
+    {
+        .description  = "Get the validation category of the given PID.",
+        .command_line = "-validation_category",
+        .ops          = CS_OPS_VALIDATION_CATEGORY,
+        .useraddr      = (void*)&off_buffer,
+        .usersize      = sizeof(off_buffer),
+        .describe      = ^{
+           fprintf(stdout, "PID: %d -> Validation category: "
+                   "'%llu'\n",
+                   process_id,
+                   off_buffer);
+        }
+    },
 };
 
 
@@ -277,7 +378,7 @@ int main (int argc, const char * argv[])
 	/* The last argument is the process ID. */
 	process_id = atoi(argv[argc-1]);
 
-	if (process_id < 0 ) {
+	if (process_id < 0 || process_id > 99999) {
 		fprintf(stderr, "Invalid process id: %s\n", argv[argc-1]);
 		usage(argc, argv);
 		return -1;
